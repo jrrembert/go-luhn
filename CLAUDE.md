@@ -43,7 +43,7 @@ Releases are fully automated via [semantic-release](https://github.com/semantic-
 - Every PR must include `Closes #N` in the body to auto-close its issue on merge
 - **Note**: `Closes #N` only auto-closes when merging into the default branch (`main`). PRs targeting `rc` won't auto-close issues — include `Closes #N` in the release PR (`rc` → `main`) or close manually
 - Branch naming: use prefixes `feature/`, `fix/`, `chore/` (e.g., `feature/add-auth`, `fix/login-bug`)
-- Commits, PR titles, and issue titles follow conventional commit format: `feat:`, `fix:`, `chore:`, `docs:`, `refactor:`, `test:`
+- Commits, PR titles, and issue titles follow conventional commit format: `feat:`, `fix:`, `chore:`, `docs:`, `refactor:`, `test:`, `perf:`, `ci:`
 - Always merge PRs via GitHub UI or `gh pr merge` — never merge locally with `git merge` then push. Local merges break GitHub's `Closes #N` auto-close linking.
 - PRs use the template at `.github/PULL_REQUEST_TEMPLATE.md` — fill in all sections (Summary, Changes, Test plan)
 - Use `/pr` or `/pr <issue-number>` to create pull requests with the standard format
