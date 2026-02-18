@@ -3,9 +3,11 @@
 package luhn
 
 import (
+	"crypto/rand"
+	"crypto/subtle"
 	"errors"
 	"fmt"
-	"math/rand"
+	"math/big"
 	"strconv"
 	"strings"
 )
@@ -101,7 +103,7 @@ func Validate(value string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	return generated == value, nil
+	return subtle.ConstantTimeCompare([]byte(generated), []byte(value)) == 1, nil
 }
 
 // Random generates a random numeric string of the given length (as a numeric string)
@@ -125,9 +127,17 @@ func Random(length string) (string, error) {
 
 	// Generate n-1 random digits (first digit 1-9, rest 0-9)
 	buf := make([]byte, n-1)
-	buf[0] = byte('1' + rand.Intn(9))
+	first, err := rand.Int(rand.Reader, big.NewInt(9))
+	if err != nil {
+		return "", err
+	}
+	buf[0] = byte('1' + first.Int64())
 	for i := 1; i < n-1; i++ {
-		buf[i] = byte('0' + rand.Intn(10))
+		d, err := rand.Int(rand.Reader, big.NewInt(10))
+		if err != nil {
+			return "", err
+		}
+		buf[i] = byte('0' + d.Int64())
 	}
 
 	// Append check digit via Generate
@@ -224,7 +234,7 @@ func ValidateModN(value string, n int) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	return generated == value, nil
+	return subtle.ConstantTimeCompare([]byte(generated), []byte(value)) == 1, nil
 }
 
 // ChecksumModN returns the integer index of the Luhn mod-N check character for value.
