@@ -4,6 +4,7 @@ package luhn
 
 import (
 	"errors"
+	"math/rand"
 	"strconv"
 	"strings"
 )
@@ -117,7 +118,20 @@ func Random(length string) (string, error) {
 	if n < 2 {
 		return "", errRandomMin
 	}
-	return "", nil
+
+	// Generate n-1 random digits (first digit 1-9, rest 0-9)
+	buf := make([]byte, n-1)
+	buf[0] = byte('1' + rand.Intn(9))
+	for i := 1; i < n-1; i++ {
+		buf[i] = byte('0' + rand.Intn(10))
+	}
+
+	// Append check digit via Generate
+	result, err := Generate(string(buf), false)
+	if err != nil {
+		return "", err
+	}
+	return result, nil
 }
 
 // GenerateModN computes a Luhn mod-N check character for the given alphanumeric value.
