@@ -15,14 +15,14 @@ import (
 const codePoints = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
 var (
-	errEmpty      = errors.New("string cannot be empty")
-	errSpaces     = errors.New("string cannot contain spaces")
-	errNegative   = errors.New("negative numbers are not allowed")
-	errFloat      = errors.New("floating point numbers are not allowed")
-	errNotNumeric = errors.New("string must be convertible to a number")
-	errMinLength  = errors.New("string must be longer than 1 character")
-	errRandomMax  = errors.New("string must be less than 100 characters")
-	errRandomMin  = errors.New("string must be greater than 1")
+	errEmpty         = errors.New("string cannot be empty")
+	errSpaces        = errors.New("string cannot contain spaces")
+	errNegative      = errors.New("negative numbers are not allowed")
+	errFloat         = errors.New("floating point numbers are not allowed")
+	errNotNumeric    = errors.New("string must be convertible to a number")
+	errMinLength     = errors.New("string must be longer than 1 character")
+	errRandomMax     = errors.New("string must be less than 100 characters")
+	errRandomMin     = errors.New("string must be greater than 1")
 	errInvalidN      = errors.New("n must be between 1 and 36")
 	errModNMaxLength = errors.New("string must be less than 10000 characters")
 )
