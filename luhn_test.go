@@ -126,6 +126,53 @@ func TestGenerateEdgeCases(t *testing.T) {
 	}
 }
 
+// TestValidateValid tests Validate with valid checksums from SPEC.md §5.
+func TestValidateValid(t *testing.T) {
+	tests := []struct {
+		input string
+	}{
+		{"18"},
+		{"125"},
+		{"1230"},
+		{"001230"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.input, func(t *testing.T) {
+			got, err := luhn.Validate(tt.input)
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if !got {
+				t.Errorf("Validate(%q) = false, want true", tt.input)
+			}
+		})
+	}
+}
+
+// TestValidateInvalid tests Validate with invalid checksums from SPEC.md §5.
+func TestValidateInvalid(t *testing.T) {
+	tests := []struct {
+		input string
+	}{
+		{"10"},
+		{"120"},
+		{"1231"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.input, func(t *testing.T) {
+			got, err := luhn.Validate(tt.input)
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if got {
+				t.Errorf("Validate(%q) = true, want false", tt.input)
+			}
+		})
+	}
+}
+
 // TestSharedValidation tests the shared validation errors through Generate, Validate, and Random.
 // Each error case is tested through all three functions to confirm they share the same validation.
 func TestSharedValidation(t *testing.T) {
