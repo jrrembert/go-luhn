@@ -8,36 +8,25 @@ import (
 	luhn "github.com/jrrembert/go-luhn"
 )
 
-// TestPackageExports verifies the package compiles and all 6 public functions are exported.
+// TestPackageExports verifies the package compiles and all 6 public functions are callable.
 func TestPackageExports(t *testing.T) {
-	// Generate
 	if _, err := luhn.Generate("1", false); err != nil {
-		t.Logf("Generate returned error (stub not yet implemented): %v", err)
+		t.Errorf("Generate: %v", err)
 	}
-
-	// Validate
 	if _, err := luhn.Validate("18"); err != nil {
-		t.Logf("Validate returned error (stub not yet implemented): %v", err)
+		t.Errorf("Validate: %v", err)
 	}
-
-	// Random
 	if _, err := luhn.Random("4"); err != nil {
-		t.Logf("Random returned error (stub not yet implemented): %v", err)
+		t.Errorf("Random: %v", err)
 	}
-
-	// GenerateModN
 	if _, err := luhn.GenerateModN("1", 10, false); err != nil {
-		t.Logf("GenerateModN returned error (stub not yet implemented): %v", err)
+		t.Errorf("GenerateModN: %v", err)
 	}
-
-	// ValidateModN
 	if _, err := luhn.ValidateModN("18", 10); err != nil {
-		t.Logf("ValidateModN returned error (stub not yet implemented): %v", err)
+		t.Errorf("ValidateModN: %v", err)
 	}
-
-	// ChecksumModN
 	if _, err := luhn.ChecksumModN("1", 10); err != nil {
-		t.Logf("ChecksumModN returned error (stub not yet implemented): %v", err)
+		t.Errorf("ChecksumModN: %v", err)
 	}
 }
 
@@ -227,6 +216,32 @@ func TestRandomUniqueness(t *testing.T) {
 			t.Fatalf("duplicate value %q at iteration %d", result, i)
 		}
 		seen[result] = true
+	}
+}
+
+// TestRandomDistribution verifies that Random output at length "2" is roughly uniformly
+// distributed (within 40% margin over 1000 iterations), as required by SPEC.md §5.
+func TestRandomDistribution(t *testing.T) {
+	const iterations = 1000
+	counts := make(map[string]int)
+
+	for i := 0; i < iterations; i++ {
+		result, err := luhn.Random("2")
+		if err != nil {
+			t.Fatalf("iteration %d: %v", i, err)
+		}
+		counts[result]++
+	}
+
+	// With length 2, first digit is 1-9 and check digit is determined by first digit,
+	// so there are 9 possible values. Expected frequency is ~1000/9 ≈ 111.
+	expected := float64(iterations) / float64(len(counts))
+	margin := expected * 0.40
+
+	for value, count := range counts {
+		if float64(count) < expected-margin || float64(count) > expected+margin {
+			t.Errorf("value %q appeared %d times (expected %.0f ± %.0f)", value, count, expected, margin)
+		}
 	}
 }
 
