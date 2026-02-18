@@ -4,22 +4,22 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-TypeScript library implementing the Luhn algorithm for generating and validating checksums (commonly used for credit card validation). Published as `@jrrembert/luhnjs` on npm.
+Go library implementing the Luhn algorithm for generating and validating checksums (commonly used for credit card validation). Published as `github.com/jrrembert/go-luhn`.
 
 ## Commands
 
 ```bash
-yarn              # Install dependencies
-yarn build        # Compile TypeScript to dist/
-yarn test         # Run all tests
-yarn test src/luhn.spec.ts                # Run a single test file
-yarn test --testNamePattern="generate"    # Run tests matching a pattern
-yarn lint         # Lint with ESLint
+go build ./...                        # Build the library
+go test ./...                         # Run all tests
+go test -run TestGenerate             # Run tests matching a pattern
+go test -v ./...                      # Run all tests with verbose output
+go vet ./...                          # Run Go vet
+golangci-lint run                     # Lint with golangci-lint
 ```
 
 ## Releases
 
-Releases are fully automated via [semantic-release](https://github.com/semantic-release/semantic-release). No manual versioning or publishing is needed. See `docs/RELEASE.md` for details.
+Releases are fully automated via [semantic-release](https://github.com/semantic-release/semantic-release). No manual versioning or publishing is needed.
 
 - **Release candidates**: Push `feat:`/`fix:` commits to the `rc` branch → publishes pre-release versions (e.g., `1.0.0-rc.1`)
 - **Stable releases**: Merge `rc` into `main` → publishes stable versions (e.g., `1.0.0`)
@@ -27,9 +27,10 @@ Releases are fully automated via [semantic-release](https://github.com/semantic-
 
 ## Architecture
 
-- `index.ts` - Entry point re-exporting the public API: `generate`, `validate`, `random`, `generateModN`, `validateModN`, `checksumModN`
-- `src/luhn.ts` - All algorithm implementations
-- `src/luhn.spec.ts` - Co-located Jest tests (ts-jest preset)
+- `luhn.go` — All algorithm implementations; exports 6 public functions: `Generate`, `Validate`, `Random`, `GenerateModN`, `ValidateModN`, `ChecksumModN`
+- `luhn_test.go` — Co-located tests (Go standard `testing` package)
+- `go.mod` — Module definition (`github.com/jrrembert/go-luhn`, no external dependencies)
+- `docs/SPEC.md` — Canonical algorithm specification with all 106 test vectors
 
 ## Git Workflow
 
@@ -46,8 +47,8 @@ Releases are fully automated via [semantic-release](https://github.com/semantic-
 - Always merge PRs via GitHub UI or `gh pr merge` — never merge locally with `git merge` then push. Local merges break GitHub's `Closes #N` auto-close linking.
 - PRs use the template at `.github/PULL_REQUEST_TEMPLATE.md` — fill in all sections (Summary, Changes, Test plan)
 - Use `/pr` or `/pr <issue-number>` to create pull requests with the standard format
-- Always create the feature branch from `rc` **before** writing code, not at commit time
-- Use a git worktree for implementation work (e.g., `git worktree add ../luhnjs-<name> <branch>`). This avoids issues with stale branch state in the main working directory
+- Always create the feature branch from the appropriate base branch (`rc` for features/fixes, `main` for chore/docs) **before** writing code, not at commit time
+- Use a git worktree for implementation work (e.g., `git worktree add ../go-luhn-<name> <branch>`). This avoids issues with stale branch state in the main working directory
 
 This project follows Test-Driven Development (TDD). For every feature or bug fix:
 
@@ -57,7 +58,11 @@ This project follows Test-Driven Development (TDD). For every feature or bug fix
 
 ## Code Style
 
-ESLint enforces: single quotes, 2-space indentation, semicolons required, trailing commas on multiline, blank line before `return` statements, no space before named function parentheses (`function foo()` not `function foo ()`).
+`gofmt` and `golangci-lint` enforce Go style. Key rules:
+- Standard Go formatting (tabs, not spaces)
+- All exported functions must have doc comments
+- Error strings are lowercase, no trailing punctuation (Go convention)
+- Function names use Go conventions: `GenerateModN`, `ValidateModN`, `ChecksumModN`
 
 ## PR Review Workflow
 
