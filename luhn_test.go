@@ -41,6 +41,92 @@ func TestPackageExports(t *testing.T) {
 	}
 }
 
+// TestGenerateChecksumOnly tests Generate with checksumOnly=true against SPEC.md §5 test vectors.
+func TestGenerateChecksumOnly(t *testing.T) {
+	tests := []struct {
+		input string
+		want  string
+	}{
+		{"1", "8"},
+		{"12", "5"},
+		{"123", "0"},
+		{"1234", "4"},
+		{"12345", "5"},
+		{"123456", "6"},
+		{"1234567", "4"},
+		{"12345678", "2"},
+		{"123456789", "7"},
+		{"7992739871", "3"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.input, func(t *testing.T) {
+			got, err := luhn.Generate(tt.input, true)
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if got != tt.want {
+				t.Errorf("Generate(%q, true) = %q, want %q", tt.input, got, tt.want)
+			}
+		})
+	}
+}
+
+// TestGenerateFullOutput tests Generate with checksumOnly=false against SPEC.md §5 test vectors.
+func TestGenerateFullOutput(t *testing.T) {
+	tests := []struct {
+		input string
+		want  string
+	}{
+		{"1", "18"},
+		{"12", "125"},
+		{"123", "1230"},
+		{"1234", "12344"},
+		{"12345", "123455"},
+		{"123456", "1234566"},
+		{"1234567", "12345674"},
+		{"12345678", "123456782"},
+		{"123456789", "1234567897"},
+		{"7992739871", "79927398713"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.input, func(t *testing.T) {
+			got, err := luhn.Generate(tt.input, false)
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if got != tt.want {
+				t.Errorf("Generate(%q, false) = %q, want %q", tt.input, got, tt.want)
+			}
+		})
+	}
+}
+
+// TestGenerateEdgeCases tests Generate edge cases from SPEC.md §5.
+func TestGenerateEdgeCases(t *testing.T) {
+	tests := []struct {
+		name  string
+		input string
+		want  string
+	}{
+		{"leading zero", "0", "00"},
+		{"multiple leading zeros", "00123", "001230"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := luhn.Generate(tt.input, false)
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if got != tt.want {
+				t.Errorf("Generate(%q, false) = %q, want %q", tt.input, got, tt.want)
+			}
+		})
+	}
+}
+
 // TestSharedValidation tests the shared validation errors through Generate, Validate, and Random.
 // Each error case is tested through all three functions to confirm they share the same validation.
 func TestSharedValidation(t *testing.T) {

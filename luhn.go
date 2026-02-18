@@ -41,6 +41,31 @@ func validateInput(value string) error {
 	return nil
 }
 
+// generateChecksum computes the Luhn check digit for a numeric string.
+func generateChecksum(value string) byte {
+	sum := 0
+	shouldDouble := true
+
+	for i := len(value) - 1; i >= 0; i-- {
+		digit := int(value[i] - '0')
+
+		if shouldDouble {
+			doubled := digit * 2
+			if doubled >= 10 {
+				sum += doubled/10 + doubled%10
+			} else {
+				sum += doubled
+			}
+		} else {
+			sum += digit
+		}
+		shouldDouble = !shouldDouble
+	}
+
+	checkDigit := (10 - (sum % 10)) % 10
+	return byte('0' + checkDigit)
+}
+
 // Generate calculates and appends a Luhn check digit to value.
 // If checksumOnly is true, only the check digit is returned.
 // Returns an error if value fails input validation.
@@ -48,7 +73,12 @@ func Generate(value string, checksumOnly bool) (string, error) {
 	if err := validateInput(value); err != nil {
 		return "", err
 	}
-	return "", nil
+
+	check := generateChecksum(value)
+	if checksumOnly {
+		return string(check), nil
+	}
+	return value + string(check), nil
 }
 
 // Validate determines whether value has a valid Luhn check digit as its last character.
