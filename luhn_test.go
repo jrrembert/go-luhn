@@ -505,7 +505,7 @@ func TestChecksumModN_Errors(t *testing.T) {
 		{"empty string", "", 10, "string cannot be empty"},
 		{"n too small", "A", 0, "n must be between 1 and 36"},
 		{"n too large", "A", 37, "n must be between 1 and 36"},
-		{"invalid char", "A!", 36, "Invalid character: !"},
+		{"invalid char", "A!", 36, "invalid character: '!'"},
 	}
 
 	for _, tt := range tests {
