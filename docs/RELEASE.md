@@ -29,6 +29,8 @@ When `rc` is merged into `main`, semantic-release:
 2. Creates a git tag (e.g., `v1.0.0`)
 3. Creates a GitHub Release with auto-generated release notes
 
+**Important**: Release PRs (`rc` → `main`) must use **merge commits** (`gh pr merge --merge`), not rebase. Rebase replays commits with new SHAs, causing `rc` and `main` to diverge and requiring a sync step after every release. Merge commits preserve the shared history between branches.
+
 Go module consumers can then install the stable version:
 
 ```bash
