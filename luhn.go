@@ -4,10 +4,13 @@ package luhn
 
 import (
 	"errors"
+	"fmt"
 	"math/rand"
 	"strconv"
 	"strings"
 )
+
+const codePoints = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
 var (
 	errEmpty      = errors.New("string cannot be empty")
@@ -18,6 +21,7 @@ var (
 	errMinLength  = errors.New("string must be longer than 1 character")
 	errRandomMax  = errors.New("string must be less than 100 characters")
 	errRandomMin  = errors.New("string must be greater than 1")
+	errInvalidN   = errors.New("n must be between 1 and 36")
 )
 
 // validateInput applies shared input validation in spec order.
@@ -134,10 +138,72 @@ func Random(length string) (string, error) {
 	return result, nil
 }
 
+// charIndex returns the index of c in the CODE_POINTS alphabet, or -1 if not found.
+func charIndex(c byte, n int) int {
+	var idx int
+	if c >= '0' && c <= '9' {
+		idx = int(c - '0')
+	} else if c >= 'A' && c <= 'Z' {
+		idx = int(c-'A') + 10
+	} else if c >= 'a' && c <= 'z' {
+		idx = int(c-'a') + 10
+	} else {
+		return -1
+	}
+	if idx >= n {
+		return -1
+	}
+	return idx
+}
+
+// generateChecksumModN computes the Luhn mod-N check character index.
+func generateChecksumModN(value string, n int) (int, error) {
+	sum := 0
+	shouldDouble := true
+
+	for i := len(value) - 1; i >= 0; i-- {
+		idx := charIndex(value[i], n)
+		if idx < 0 {
+			return 0, fmt.Errorf("Invalid character: %c", value[i])
+		}
+
+		if shouldDouble {
+			doubled := idx * 2
+			if doubled >= n {
+				sum += doubled/n + doubled%n
+			} else {
+				sum += doubled
+			}
+		} else {
+			sum += idx
+		}
+		shouldDouble = !shouldDouble
+	}
+
+	checkIdx := (n - (sum % n)) % n
+	return checkIdx, nil
+}
+
 // GenerateModN computes a Luhn mod-N check character for the given alphanumeric value.
 // n must be between 1 and 36. If checksumOnly is true, only the check character is returned.
 func GenerateModN(value string, n int, checksumOnly bool) (string, error) {
-	return "", nil
+	if value == "" {
+		return "", errEmpty
+	}
+	if n < 1 || n > 36 {
+		return "", errInvalidN
+	}
+
+	checkIdx, err := generateChecksumModN(value, n)
+	if err != nil {
+		return "", err
+	}
+
+	checkChar := codePoints[checkIdx]
+	if checksumOnly {
+		return string(checkChar), nil
+	}
+	return value + string(checkChar), nil
 }
 
 // ValidateModN determines whether value has a valid Luhn mod-N check character.

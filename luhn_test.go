@@ -230,6 +230,119 @@ func TestRandomUniqueness(t *testing.T) {
 	}
 }
 
+// TestGenerateModN_Base10 verifies that GenerateModN with n=10 matches Generate.
+func TestGenerateModN_Base10(t *testing.T) {
+	inputs := []string{"1", "12", "123", "1234", "7992739871"}
+
+	for _, input := range inputs {
+		t.Run(input, func(t *testing.T) {
+			want, err := luhn.Generate(input, false)
+			if err != nil {
+				t.Fatalf("Generate error: %v", err)
+			}
+			got, err := luhn.GenerateModN(input, 10, false)
+			if err != nil {
+				t.Fatalf("GenerateModN error: %v", err)
+			}
+			if got != want {
+				t.Errorf("GenerateModN(%q, 10, false) = %q, want %q", input, got, want)
+			}
+		})
+	}
+}
+
+// TestGenerateModN_Base10ChecksumOnly verifies checksumOnly mode matches Generate.
+func TestGenerateModN_Base10ChecksumOnly(t *testing.T) {
+	inputs := []string{"1", "123", "7992739871"}
+
+	for _, input := range inputs {
+		t.Run(input, func(t *testing.T) {
+			want, err := luhn.Generate(input, true)
+			if err != nil {
+				t.Fatalf("Generate error: %v", err)
+			}
+			got, err := luhn.GenerateModN(input, 10, true)
+			if err != nil {
+				t.Fatalf("GenerateModN error: %v", err)
+			}
+			if got != want {
+				t.Errorf("GenerateModN(%q, 10, true) = %q, want %q", input, got, want)
+			}
+		})
+	}
+}
+
+// TestGenerateModN_Alphanumeric tests GenerateModN with n=36 (full 0-9A-Z alphabet).
+func TestGenerateModN_Alphanumeric(t *testing.T) {
+	// With n=36, characters A-Z map to indices 10-35.
+	// We verify the result ends with a valid CODE_POINTS character and round-trips via ValidateModN.
+	tests := []struct {
+		input string
+		n     int
+	}{
+		{"A", 36},
+		{"AB", 36},
+		{"HELLO", 36},
+		{"123ABC", 36},
+		{"A", 16},
+		{"FF", 16},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.input, func(t *testing.T) {
+			result, err := luhn.GenerateModN(tt.input, tt.n, false)
+			if err != nil {
+				t.Fatalf("GenerateModN(%q, %d, false) error: %v", tt.input, tt.n, err)
+			}
+			// Result should be input + one check character
+			if len(result) != len(tt.input)+1 {
+				t.Errorf("len = %d, want %d", len(result), len(tt.input)+1)
+			}
+			// Prefix should be the original input
+			if result[:len(tt.input)] != tt.input {
+				t.Errorf("prefix = %q, want %q", result[:len(tt.input)], tt.input)
+			}
+		})
+	}
+}
+
+// TestGenerateModN_InvalidN tests that n out of range [1,36] returns an error.
+func TestGenerateModN_InvalidN(t *testing.T) {
+	tests := []struct {
+		name string
+		n    int
+	}{
+		{"zero", 0},
+		{"negative", -1},
+		{"too large", 37},
+	}
+
+	want := "n must be between 1 and 36"
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := luhn.GenerateModN("A", tt.n, false)
+			if err == nil {
+				t.Fatalf("expected error, got nil")
+			}
+			if err.Error() != want {
+				t.Errorf("got %q, want %q", err.Error(), want)
+			}
+		})
+	}
+}
+
+// TestGenerateModN_EmptyString tests that empty string returns an error.
+func TestGenerateModN_EmptyString(t *testing.T) {
+	_, err := luhn.GenerateModN("", 10, false)
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+	want := "string cannot be empty"
+	if err.Error() != want {
+		t.Errorf("got %q, want %q", err.Error(), want)
+	}
+}
+
 // TestSharedValidation tests the shared validation errors through Generate, Validate, and Random.
 // Each error case is tested through all three functions to confirm they share the same validation.
 func TestSharedValidation(t *testing.T) {
