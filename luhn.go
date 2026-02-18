@@ -23,7 +23,8 @@ var (
 	errMinLength  = errors.New("string must be longer than 1 character")
 	errRandomMax  = errors.New("string must be less than 100 characters")
 	errRandomMin  = errors.New("string must be greater than 1")
-	errInvalidN   = errors.New("n must be between 1 and 36")
+	errInvalidN      = errors.New("n must be between 1 and 36")
+	errModNMaxLength = errors.New("string must be less than 10000 characters")
 )
 
 // validateInput applies shared input validation in spec order.
@@ -174,7 +175,7 @@ func generateChecksumModN(value string, n int) (int, error) {
 	for i := len(value) - 1; i >= 0; i-- {
 		idx := charIndex(value[i], n)
 		if idx < 0 {
-			return 0, fmt.Errorf("Invalid character: %c", value[i])
+			return 0, fmt.Errorf("invalid character: %q", value[i])
 		}
 
 		if shouldDouble {
@@ -203,6 +204,9 @@ func GenerateModN(value string, n int, checksumOnly bool) (string, error) {
 	if n < 1 || n > 36 {
 		return "", errInvalidN
 	}
+	if len(value) >= 10000 {
+		return "", errModNMaxLength
+	}
 
 	checkIdx, err := generateChecksumModN(value, n)
 	if err != nil {
@@ -228,6 +232,9 @@ func ValidateModN(value string, n int) (bool, error) {
 	if n < 1 || n > 36 {
 		return false, errInvalidN
 	}
+	if len(value) >= 10000 {
+		return false, errModNMaxLength
+	}
 
 	payload := value[:len(value)-1]
 	generated, err := GenerateModN(payload, n, false)
@@ -245,6 +252,9 @@ func ChecksumModN(value string, n int) (int, error) {
 	}
 	if n < 1 || n > 36 {
 		return 0, errInvalidN
+	}
+	if len(value) >= 10000 {
+		return 0, errModNMaxLength
 	}
 	return generateChecksumModN(value, n)
 }
