@@ -343,6 +343,169 @@ func TestGenerateModN_EmptyString(t *testing.T) {
 	}
 }
 
+// TestValidateModN_RoundTrip tests that GenerateModN output passes ValidateModN.
+func TestValidateModN_RoundTrip(t *testing.T) {
+	tests := []struct {
+		input string
+		n     int
+	}{
+		{"1", 10},
+		{"123", 10},
+		{"7992739871", 10},
+		{"A", 36},
+		{"HELLO", 36},
+		{"123ABC", 36},
+		{"FF", 16},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.input, func(t *testing.T) {
+			generated, err := luhn.GenerateModN(tt.input, tt.n, false)
+			if err != nil {
+				t.Fatalf("GenerateModN error: %v", err)
+			}
+			valid, err := luhn.ValidateModN(generated, tt.n)
+			if err != nil {
+				t.Fatalf("ValidateModN error: %v", err)
+			}
+			if !valid {
+				t.Errorf("ValidateModN(%q, %d) = false, want true", generated, tt.n)
+			}
+		})
+	}
+}
+
+// TestValidateModN_Invalid tests that wrong check characters are rejected.
+func TestValidateModN_Invalid(t *testing.T) {
+	tests := []struct {
+		input string
+		n     int
+	}{
+		{"10", 10},
+		{"AZ", 36},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.input, func(t *testing.T) {
+			// First verify this is actually invalid by generating the correct one
+			generated, _ := luhn.GenerateModN(tt.input[:len(tt.input)-1], tt.n, false)
+			if generated == tt.input {
+				t.Skip("input happens to be valid, skip")
+			}
+
+			valid, err := luhn.ValidateModN(tt.input, tt.n)
+			if err != nil {
+				t.Fatalf("ValidateModN error: %v", err)
+			}
+			if valid {
+				t.Errorf("ValidateModN(%q, %d) = true, want false", tt.input, tt.n)
+			}
+		})
+	}
+}
+
+// TestValidateModN_Errors tests ValidateModN error cases.
+func TestValidateModN_Errors(t *testing.T) {
+	tests := []struct {
+		name  string
+		input string
+		n     int
+		want  string
+	}{
+		{"empty string", "", 10, "string cannot be empty"},
+		{"length 1", "A", 36, "string must be longer than 1 character"},
+		{"n too small", "AB", 0, "n must be between 1 and 36"},
+		{"n too large", "AB", 37, "n must be between 1 and 36"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := luhn.ValidateModN(tt.input, tt.n)
+			if err == nil {
+				t.Fatalf("expected error %q, got nil", tt.want)
+			}
+			if err.Error() != tt.want {
+				t.Errorf("got %q, want %q", err.Error(), tt.want)
+			}
+		})
+	}
+}
+
+// TestChecksumModN_Base10 verifies ChecksumModN matches generateChecksum for base-10.
+func TestChecksumModN_Base10(t *testing.T) {
+	tests := []struct {
+		input    string
+		wantChar string
+	}{
+		{"1", "8"},
+		{"123", "0"},
+		{"7992739871", "3"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.input, func(t *testing.T) {
+			idx, err := luhn.ChecksumModN(tt.input, 10)
+			if err != nil {
+				t.Fatalf("ChecksumModN error: %v", err)
+			}
+			// idx should be the digit value itself for base-10
+			wantIdx, _ := strconv.Atoi(tt.wantChar)
+			if idx != wantIdx {
+				t.Errorf("ChecksumModN(%q, 10) = %d, want %d", tt.input, idx, wantIdx)
+			}
+		})
+	}
+}
+
+// TestChecksumModN_Alphanumeric verifies ChecksumModN returns the correct index.
+func TestChecksumModN_Alphanumeric(t *testing.T) {
+	// Generate a known value and check that ChecksumModN returns the index of the check char
+	input := "HELLO"
+	n := 36
+	generated, err := luhn.GenerateModN(input, n, true)
+	if err != nil {
+		t.Fatalf("GenerateModN error: %v", err)
+	}
+
+	idx, err := luhn.ChecksumModN(input, n)
+	if err != nil {
+		t.Fatalf("ChecksumModN error: %v", err)
+	}
+
+	// The check character from GenerateModN should be codePoints[idx]
+	codePoints := "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	if string(codePoints[idx]) != generated {
+		t.Errorf("ChecksumModN(%q, %d) = %d (char %c), want char %q", input, n, idx, codePoints[idx], generated)
+	}
+}
+
+// TestChecksumModN_Errors tests ChecksumModN error cases.
+func TestChecksumModN_Errors(t *testing.T) {
+	tests := []struct {
+		name  string
+		input string
+		n     int
+		want  string
+	}{
+		{"empty string", "", 10, "string cannot be empty"},
+		{"n too small", "A", 0, "n must be between 1 and 36"},
+		{"n too large", "A", 37, "n must be between 1 and 36"},
+		{"invalid char", "A!", 36, "Invalid character: !"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := luhn.ChecksumModN(tt.input, tt.n)
+			if err == nil {
+				t.Fatalf("expected error %q, got nil", tt.want)
+			}
+			if err.Error() != tt.want {
+				t.Errorf("got %q, want %q", err.Error(), tt.want)
+			}
+		})
+	}
+}
+
 // TestSharedValidation tests the shared validation errors through Generate, Validate, and Random.
 // Each error case is tested through all three functions to confirm they share the same validation.
 func TestSharedValidation(t *testing.T) {
