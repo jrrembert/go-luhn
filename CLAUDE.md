@@ -24,6 +24,7 @@ Releases are fully automated via [semantic-release](https://github.com/semantic-
 - **Release candidates**: Push `feat:`/`fix:` commits to the `rc` branch → publishes pre-release versions (e.g., `1.0.0-rc.1`)
 - **Stable releases**: Merge `rc` into `main` → publishes stable versions (e.g., `1.0.0`)
 - Every stable release must be preceded by at least one release candidate
+- After each release, the workflow automatically registers the new version with the [Go module proxy](https://proxy.golang.org) so it's immediately discoverable on [pkg.go.dev](https://pkg.go.dev/github.com/jrrembert/go-luhn) and available via `go get`
 
 ## Architecture
 

@@ -27,3 +27,16 @@ jobs:
       - run: npx semantic-release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+      - name: Register with Go module proxy
+        run: |
+          git fetch --tags
+          VERSION=$(git tag --points-at HEAD | head -1)
+          if [ -n "$VERSION" ]; then
+            echo "Registering $VERSION with Go module proxy..."
+            GOPROXY=https://proxy.golang.org go list -m "github.com/jrrembert/go-luhn@$VERSION"
+          else
+            echo "No new tag created, skipping proxy registration."
+          fi
