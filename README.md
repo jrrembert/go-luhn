@@ -2,6 +2,8 @@
 
 [![CI](https://github.com/jrrembert/go-luhn/actions/workflows/ci.yml/badge.svg)](https://github.com/jrrembert/go-luhn/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/jrrembert/go-luhn/graph/badge.svg)](https://codecov.io/gh/jrrembert/go-luhn)
+[![Go Reference](https://pkg.go.dev/badge/github.com/jrrembert/go-luhn.svg)](https://pkg.go.dev/github.com/jrrembert/go-luhn)
+[![Go Report Card](https://goreportcard.com/badge/github.com/jrrembert/go-luhn)](https://goreportcard.com/report/github.com/jrrembert/go-luhn)
 
 A Go implementation of the Luhn algorithm for generating and validating checksums.
 
