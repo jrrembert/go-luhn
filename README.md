@@ -1,5 +1,7 @@
 # go-luhn
 
+[![CI](https://github.com/jrrembert/go-luhn/actions/workflows/ci.yml/badge.svg)](https://github.com/jrrembert/go-luhn/actions/workflows/ci.yml)
+
 A minimal, dependency-free Go library implementing the [Luhn algorithm](https://en.wikipedia.org/wiki/Luhn_algorithm) (ISO/IEC 7812-1) for generating and validating checksums. Commonly used for credit card validation, IMEI numbers, and other numeric identifiers.
 
 ## Installation
