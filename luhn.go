@@ -90,7 +90,13 @@ func Validate(value string) (bool, error) {
 	if len(value) == 1 {
 		return false, errMinLength
 	}
-	return false, nil
+
+	payload := value[:len(value)-1]
+	generated, err := Generate(payload, false)
+	if err != nil {
+		return false, err
+	}
+	return generated == value, nil
 }
 
 // Random generates a random numeric string of the given length (as a numeric string)
