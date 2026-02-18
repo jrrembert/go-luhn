@@ -173,6 +173,62 @@ func TestValidateInvalid(t *testing.T) {
 	}
 }
 
+// TestRandomProperties tests Random output properties from SPEC.md §5.
+func TestRandomProperties(t *testing.T) {
+	lengths := []string{"2", "5", "10", "50", "100"}
+
+	for _, length := range lengths {
+		t.Run("length_"+length, func(t *testing.T) {
+			n, _ := strconv.Atoi(length)
+			result, err := luhn.Random(length)
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+
+			// Output length equals requested length
+			if len(result) != n {
+				t.Errorf("len(Random(%q)) = %d, want %d", length, len(result), n)
+			}
+
+			// Output passes Validate
+			valid, err := luhn.Validate(result)
+			if err != nil {
+				t.Fatalf("Validate(%q) error: %v", result, err)
+			}
+			if !valid {
+				t.Errorf("Random(%q) produced %q which fails Validate", length, result)
+			}
+
+			// Output contains only digits
+			for i, c := range result {
+				if c < '0' || c > '9' {
+					t.Errorf("Random(%q)[%d] = %c, want digit", length, i, c)
+				}
+			}
+
+			// First digit is not zero
+			if result[0] == '0' {
+				t.Errorf("Random(%q) = %q, first digit is zero", length, result)
+			}
+		})
+	}
+}
+
+// TestRandomUniqueness verifies that 100 consecutive calls produce 100 unique values.
+func TestRandomUniqueness(t *testing.T) {
+	seen := make(map[string]bool)
+	for i := 0; i < 100; i++ {
+		result, err := luhn.Random("10")
+		if err != nil {
+			t.Fatalf("iteration %d: unexpected error: %v", i, err)
+		}
+		if seen[result] {
+			t.Fatalf("duplicate value %q at iteration %d", result, i)
+		}
+		seen[result] = true
+	}
+}
+
 // TestSharedValidation tests the shared validation errors through Generate, Validate, and Random.
 // Each error case is tested through all three functions to confirm they share the same validation.
 func TestSharedValidation(t *testing.T) {
