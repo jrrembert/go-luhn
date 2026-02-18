@@ -48,7 +48,7 @@ Releases are fully automated via [semantic-release](https://github.com/semantic-
 - PRs use the template at `.github/PULL_REQUEST_TEMPLATE.md` — fill in all sections (Summary, Changes, Test plan)
 - Use `/pr` or `/pr <issue-number>` to create pull requests with the standard format
 - Always create the feature branch from the appropriate base branch (`rc` for features/fixes, `main` for chore/docs) **before** writing code, not at commit time
-- Use a git worktree for implementation work (e.g., `git worktree add ../go-luhn-<name> <branch>`). This avoids issues with stale branch state in the main working directory
+- Use a git worktree for implementation work (e.g., `git worktree add ../go-luhn-<name> <branch>`). This avoids issues with stale branch state in the main working directory. Do not remove the worktree until the PR has been merged
 
 This project follows Test-Driven Development (TDD). For every feature or bug fix:
 
