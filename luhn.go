@@ -209,11 +209,32 @@ func GenerateModN(value string, n int, checksumOnly bool) (string, error) {
 // ValidateModN determines whether value has a valid Luhn mod-N check character.
 // n must be between 1 and 36.
 func ValidateModN(value string, n int) (bool, error) {
-	return false, nil
+	if value == "" {
+		return false, errEmpty
+	}
+	if len(value) == 1 {
+		return false, errMinLength
+	}
+	if n < 1 || n > 36 {
+		return false, errInvalidN
+	}
+
+	payload := value[:len(value)-1]
+	generated, err := GenerateModN(payload, n, false)
+	if err != nil {
+		return false, err
+	}
+	return generated == value, nil
 }
 
 // ChecksumModN returns the integer index of the Luhn mod-N check character for value.
 // n must be between 1 and 36.
 func ChecksumModN(value string, n int) (int, error) {
-	return 0, nil
+	if value == "" {
+		return 0, errEmpty
+	}
+	if n < 1 || n > 36 {
+		return 0, errInvalidN
+	}
+	return generateChecksumModN(value, n)
 }
