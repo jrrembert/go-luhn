@@ -1,7 +1,6 @@
 package luhn_test
 
 import (
-	"strconv"
 	"strings"
 	"testing"
 
@@ -141,13 +140,9 @@ func TestRandomSpecificValidation(t *testing.T) {
 	})
 
 	t.Run("too large", func(t *testing.T) {
+		// A 99-digit string overflows strconv.Atoi, so Random treats
+		// the parse error as exceeding the max length.
 		input := strings.Repeat("1", 99)
-		parsed, _ := strconv.Atoi(input)
-		if parsed <= 100 {
-			// The spec says parsed integer > 100 triggers the error.
-			// "1" repeated 99 times is a huge number, definitely > 100.
-			t.Logf("parsed value %d should be > 100", parsed)
-		}
 		_, err := luhn.Random(input)
 		if err == nil {
 			t.Fatal("expected error for oversized length, got nil")
