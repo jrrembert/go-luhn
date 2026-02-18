@@ -1,19 +1,28 @@
 # go-luhn
 
 [![CI](https://github.com/jrrembert/go-luhn/actions/workflows/ci.yml/badge.svg)](https://github.com/jrrembert/go-luhn/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/jrrembert/go-luhn/graph/badge.svg)](https://codecov.io/gh/jrrembert/go-luhn)
 
-A minimal, dependency-free Go library implementing the [Luhn algorithm](https://en.wikipedia.org/wiki/Luhn_algorithm) (ISO/IEC 7812-1) for generating and validating checksums. Commonly used for credit card validation, IMEI numbers, and other numeric identifiers.
+A Go implementation of the Luhn algorithm for generating and validating checksums.
 
-## Installation
+Published as [`github.com/jrrembert/go-luhn`](https://pkg.go.dev/github.com/jrrembert/go-luhn).
+
+## Getting Started
+
+### Prerequisites
+
+Install [Go](https://go.dev/) (>=1.21).
+
+### Installation
 
 ```bash
-go get jrrembert/go-luhn
+$ go get github.com/jrrembert/go-luhn
 ```
 
-## Usage
+### Usage
 
 ```go
-import "jrrembert/go-luhn"
+import luhn "github.com/jrrembert/go-luhn"
 
 // Generate a check digit and append it
 result, _ := luhn.Generate("7992739871", false)
@@ -47,37 +56,35 @@ n, _ := luhn.ChecksumModN("ABC123", 36)
 // n => 0
 ```
 
-## API
+## Commands
 
-### `Generate(value string, checksumOnly bool) (string, error)`
+```bash
+# Build the library
+$ go build ./...
 
-Computes a Luhn check digit for `value`.
+# Run tests
+$ go test ./...
 
-- If `checksumOnly` is `false` (default): returns `value` with the check digit appended.
-- If `checksumOnly` is `true`: returns only the check digit as a single-character string.
+# Run Go vet
+$ go vet ./...
 
-### `Validate(value string) (bool, error)`
+# Lint
+$ golangci-lint run
+```
 
-Returns `true` if the last character of `value` is a valid Luhn check digit, `false` otherwise.
+## Documentation
 
-### `Random(length string) (string, error)`
+- [Specification](docs/SPEC.md) - Algorithm specification and test vectors
+- [Contributing](CONTRIBUTING.md) - How to contribute
+- [Code of Conduct](CODE_OF_CONDUCT.md) - Community guidelines
+- [Security](SECURITY.md) - Reporting vulnerabilities
 
-Generates a random numeric string of exactly `length` characters with a valid Luhn checksum. The first digit is never zero.
+## Contact
 
-Valid range: `"2"` to `"100"`.
-
-### `GenerateModN(value string, n int, checksumOnly bool) (string, error)`
-
-Luhn mod-N variant. Computes a check character from an alphabet of `n` code points (`0-9A-Z`, where `n` is 1–36).
-
-### `ValidateModN(value string, n int) (bool, error)`
-
-Returns `true` if the last character of `value` is a valid Luhn mod-N check character.
-
-### `ChecksumModN(value string, n int) (int, error)`
-
-Lower-level mod-N checksum calculation. Accepts alphanumeric input (`0-9`, `A-Z`, `a-z`) and returns the check digit as an integer.
+Email: [J. Ryan Rembert](mailto:j.ryan.rembert@gmail.com)
 
 ## License
 
-[MIT](LICENSE) © J. Ryan Rembert
+[MIT](LICENSE)
+
+Copyright © 2022-2026 J. Ryan Rembert
