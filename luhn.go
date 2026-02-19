@@ -256,14 +256,18 @@ func ValidateModN(value string, n int) (bool, error) {
 		return false, errModNMaxLength
 	}
 
-	payload := value[:len(value)-1]
+	// Normalize to uppercase so that lowercase input matches the uppercase
+	// CODE_POINTS alphabet used by GenerateModN.
+	upper := strings.ToUpper(value)
+
+	payload := upper[:len(upper)-1]
 	generated, err := GenerateModN(payload, n, false)
 	if err != nil {
 		return false, err
 	}
 	// Use constant-time comparison to prevent timing side-channel attacks
 	// that could reveal information about valid check digits.
-	return subtle.ConstantTimeCompare([]byte(generated), []byte(value)) == 1, nil
+	return subtle.ConstantTimeCompare([]byte(generated), []byte(upper)) == 1, nil
 }
 
 // ChecksumModN returns the integer index of the Luhn mod-N check character for value.

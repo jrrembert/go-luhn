@@ -466,6 +466,50 @@ func TestValidateModN_RoundTrip(t *testing.T) {
 	}
 }
 
+// TestValidateModN_CaseInsensitive tests that ValidateModN accepts lowercase check characters.
+func TestValidateModN_CaseInsensitive(t *testing.T) {
+	tests := []struct {
+		name  string
+		input string
+		n     int
+	}{
+		{"lowercase check char", "hello", 36},
+		{"uppercase check char", "HELLO", 36},
+		{"mixed case payload", "HeLLo", 36},
+		{"hex lowercase", "ff", 16},
+		{"hex uppercase", "FF", 16},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Generate the correct value (always uppercase check char)
+			generated, err := luhn.GenerateModN(tt.input, tt.n, false)
+			if err != nil {
+				t.Fatalf("GenerateModN error: %v", err)
+			}
+
+			// Uppercase version should validate
+			valid, err := luhn.ValidateModN(generated, tt.n)
+			if err != nil {
+				t.Fatalf("ValidateModN(%q) error: %v", generated, err)
+			}
+			if !valid {
+				t.Errorf("ValidateModN(%q, %d) = false, want true", generated, tt.n)
+			}
+
+			// Lowercase version should also validate
+			lowered := strings.ToLower(generated)
+			valid, err = luhn.ValidateModN(lowered, tt.n)
+			if err != nil {
+				t.Fatalf("ValidateModN(%q) error: %v", lowered, err)
+			}
+			if !valid {
+				t.Errorf("ValidateModN(%q, %d) = false, want true [lowercased]", lowered, tt.n)
+			}
+		})
+	}
+}
+
 // TestValidateModN_Invalid tests that wrong check characters are rejected.
 func TestValidateModN_Invalid(t *testing.T) {
 	tests := []struct {
