@@ -31,6 +31,8 @@ When `rc` is merged into `main`, semantic-release:
 
 **Important**: Release PRs (`rc` → `main`) must use **merge commits** (`gh pr merge --merge`), not rebase. Rebase replays commits with new SHAs, causing `rc` and `main` to diverge and requiring a sync step after every release. Merge commits preserve the shared history between branches.
 
+This is enforced automatically by `.github/workflows/auto-merge-release.yml` — when a PR from `rc` to `main` is opened, the workflow enables GitHub auto-merge with the merge commit strategy. Once all required status checks pass, the PR merges automatically.
+
 
 Go module consumers can then install the stable version:
 
