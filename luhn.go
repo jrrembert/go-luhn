@@ -3,9 +3,11 @@
 package luhn
 
 import (
+	"crypto/rand"
+	"crypto/subtle"
 	"errors"
 	"fmt"
-	"math/rand"
+	"math/big"
 	"strconv"
 	"strings"
 )
@@ -13,15 +15,16 @@ import (
 const codePoints = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
 var (
-	errEmpty      = errors.New("string cannot be empty")
-	errSpaces     = errors.New("string cannot contain spaces")
-	errNegative   = errors.New("negative numbers are not allowed")
-	errFloat      = errors.New("floating point numbers are not allowed")
-	errNotNumeric = errors.New("string must be convertible to a number")
-	errMinLength  = errors.New("string must be longer than 1 character")
-	errRandomMax  = errors.New("string must be less than 100 characters")
-	errRandomMin  = errors.New("string must be greater than 1")
-	errInvalidN   = errors.New("n must be between 1 and 36")
+	errEmpty         = errors.New("string cannot be empty")
+	errSpaces        = errors.New("string cannot contain spaces")
+	errNegative      = errors.New("negative numbers are not allowed")
+	errFloat         = errors.New("floating point numbers are not allowed")
+	errNotNumeric    = errors.New("string must be convertible to a number")
+	errMinLength     = errors.New("string must be longer than 1 character")
+	errRandomMax     = errors.New("string must be less than 100 characters")
+	errRandomMin     = errors.New("string must be greater than 1")
+	errInvalidN      = errors.New("n must be between 1 and 36")
+	errModNMaxLength = errors.New("string must be less than 10000 characters")
 )
 
 // validateInput applies shared input validation in spec order.
@@ -101,7 +104,9 @@ func Validate(value string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	return generated == value, nil
+	// Use constant-time comparison to prevent timing side-channel attacks
+	// that could reveal information about valid check digits.
+	return subtle.ConstantTimeCompare([]byte(generated), []byte(value)) == 1, nil
 }
 
 // Random generates a random numeric string of the given length (as a numeric string)
@@ -125,9 +130,17 @@ func Random(length string) (string, error) {
 
 	// Generate n-1 random digits (first digit 1-9, rest 0-9)
 	buf := make([]byte, n-1)
-	buf[0] = byte('1' + rand.Intn(9))
+	first, err := rand.Int(rand.Reader, big.NewInt(9))
+	if err != nil {
+		return "", err
+	}
+	buf[0] = byte('1' + first.Int64())
 	for i := 1; i < n-1; i++ {
-		buf[i] = byte('0' + rand.Intn(10))
+		d, err := rand.Int(rand.Reader, big.NewInt(10))
+		if err != nil {
+			return "", err
+		}
+		buf[i] = byte('0' + d.Int64())
 	}
 
 	// Append check digit via Generate
@@ -164,7 +177,7 @@ func generateChecksumModN(value string, n int) (int, error) {
 	for i := len(value) - 1; i >= 0; i-- {
 		idx := charIndex(value[i], n)
 		if idx < 0 {
-			return 0, fmt.Errorf("Invalid character: %c", value[i])
+			return 0, fmt.Errorf("invalid character: %q", value[i])
 		}
 
 		if shouldDouble {
@@ -193,6 +206,9 @@ func GenerateModN(value string, n int, checksumOnly bool) (string, error) {
 	if n < 1 || n > 36 {
 		return "", errInvalidN
 	}
+	if len(value) >= 10000 {
+		return "", errModNMaxLength
+	}
 
 	checkIdx, err := generateChecksumModN(value, n)
 	if err != nil {
@@ -218,13 +234,18 @@ func ValidateModN(value string, n int) (bool, error) {
 	if n < 1 || n > 36 {
 		return false, errInvalidN
 	}
+	if len(value) >= 10000 {
+		return false, errModNMaxLength
+	}
 
 	payload := value[:len(value)-1]
 	generated, err := GenerateModN(payload, n, false)
 	if err != nil {
 		return false, err
 	}
-	return generated == value, nil
+	// Use constant-time comparison to prevent timing side-channel attacks
+	// that could reveal information about valid check digits.
+	return subtle.ConstantTimeCompare([]byte(generated), []byte(value)) == 1, nil
 }
 
 // ChecksumModN returns the integer index of the Luhn mod-N check character for value.
@@ -235,6 +256,9 @@ func ChecksumModN(value string, n int) (int, error) {
 	}
 	if n < 1 || n > 36 {
 		return 0, errInvalidN
+	}
+	if len(value) >= 10000 {
+		return 0, errModNMaxLength
 	}
 	return generateChecksumModN(value, n)
 }
