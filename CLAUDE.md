@@ -48,7 +48,7 @@ Releases are fully automated via [semantic-release](https://github.com/semantic-
 - Always merge PRs via GitHub UI or `gh pr merge` — never merge locally with `git merge` then push. Local merges break GitHub's `Closes #N` auto-close linking.
 - **Merge strategy**:
   - `--rebase` for all regular PRs: `feat:`, `fix:`, `chore:`, `docs:`, `refactor:`, `test:`, `perf:`, `ci:`
-  - `--merge` (merge commit) for release PRs (`rc` → `main`) — keeps the branches in sync and avoids SHA divergence
+  - `--merge` (merge commit) for release PRs (`rc` → `main`) — keeps the branches in sync and avoids SHA divergence. This is enforced automatically: when a release PR from `rc` to `main` is opened, the `auto-merge-release.yml` workflow enables auto-merge with `--merge`
 - PRs use the template at `.github/PULL_REQUEST_TEMPLATE.md` — fill in all sections (Summary, Changes, Test plan)
 - Use `/pr` or `/pr <issue-number>` to create pull requests with the standard format
 - Always create the feature branch from the appropriate base branch (`rc` for features/fixes, `main` for chore/docs) **before** writing code, not at commit time
