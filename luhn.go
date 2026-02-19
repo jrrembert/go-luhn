@@ -104,6 +104,8 @@ func Validate(value string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
+	// Use constant-time comparison to prevent timing side-channel attacks
+	// that could reveal information about valid check digits.
 	return subtle.ConstantTimeCompare([]byte(generated), []byte(value)) == 1, nil
 }
 
@@ -241,6 +243,8 @@ func ValidateModN(value string, n int) (bool, error) {
 	if err != nil {
 		return false, err
 	}
+	// Use constant-time comparison to prevent timing side-channel attacks
+	// that could reveal information about valid check digits.
 	return subtle.ConstantTimeCompare([]byte(generated), []byte(value)) == 1, nil
 }
 
