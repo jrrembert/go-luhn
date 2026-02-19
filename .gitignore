@@ -13,7 +13,6 @@
 
 # Dependency directories
 # vendor/
-node_modules/
 
 # Port architecture
 docs/PORT_GUIDE.md
