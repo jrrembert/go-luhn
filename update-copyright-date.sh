@@ -1,25 +1,35 @@
 #!/bin/bash
 
-# Check if file is provided as argument
-if [ $# -ne 1 ]; then
-    echo "Usage: $0 <markdown_file>"
-    exit 1
-fi
+# Updates copyright year ranges in LICENSE and README.md.
+# Called by the update-copyright-date GitHub Actions workflow.
 
-file="$1"
 current_year=$(date +"%Y")
 
-# Check if file exists
-if [ ! -f "$file" ]; then
-    echo "Error: File $file not found"
-    exit 1
+files=("LICENSE" "README.md")
+updated=0
+
+for file in "${files[@]}"; do
+    if [ ! -f "$file" ]; then
+        echo "Skipping $file (not found)"
+        continue
+    fi
+
+    # Update "Copyright (c) YYYY" or "Copyright (c) YYYY-YYYY" (LICENSE)
+    # Update "© YYYY" or "© YYYY-YYYY" (README.md)
+    sed -i.bak -E \
+        -e "s/(Copyright \(c\) )([0-9]{4})([-][0-9]{4})?/\1\2-$current_year/" \
+        -e "s/(© )([0-9]{4})([-][0-9]{4})?/\1\2-$current_year/" \
+        "$file"
+    rm -f "${file}.bak"
+
+    if git diff --quiet "$file" 2>/dev/null; then
+        echo "$file: already up to date"
+    else
+        echo "$file: updated copyright year to $current_year"
+        updated=1
+    fi
+done
+
+if [ "$updated" -eq 0 ]; then
+    echo "No changes needed"
 fi
-
-# Update copyright years with company name
-# Matches any year or year range between © and the rest of the line
-sed -i.bak -E "s/(© )([0-9]{4})([-][0-9]{4})?/\1\2-$current_year/" "$file"
-
-# Remove backup file
-rm "${file}.bak"
-
-echo "Copyright years updated in $file"

@@ -1,0 +1,30 @@
+name: Update copyright date
+
+on:
+  schedule:
+    - cron: "0 0 1 1 *" # January 1st at midnight UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update-copyright:
+    if: github.repository == 'jrrembert/go-luhn'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - name: Update copyright years
+        run: bash update-copyright-date.sh
+      - name: Create pull request
+        uses: peter-evans/create-pull-request@22a9089034f40e5a961c8808d113e2c98fb63676 # v7.0.11
+        with:
+          commit-message: "chore: update copyright year"
+          title: "chore: update copyright year"
+          body: |
+            Automated annual copyright year update.
+
+            Updates copyright year ranges in LICENSE and README.md.
+          branch: chore/update-copyright-date
+          delete-branch: true
