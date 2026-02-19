@@ -321,6 +321,37 @@ func TestGenerateModN_Alphanumeric(t *testing.T) {
 	}
 }
 
+// TestGenerateModN_Errors tests GenerateModN error cases including shared validation.
+func TestGenerateModN_Errors(t *testing.T) {
+	tests := []struct {
+		name  string
+		input string
+		n     int
+		want  string
+	}{
+		{"empty string", "", 10, "string cannot be empty"},
+		{"spaces", " A ", 36, "string cannot contain spaces"},
+		{"invalid char dash", "A-B", 36, "invalid character: '-'"},
+		{"invalid char dot", "A.B", 36, "invalid character: '.'"},
+		{"invalid char special", "A!", 36, "invalid character: '!'"},
+		{"char out of range for n", "A", 10, "invalid character: 'A'"},
+		{"n too small", "A", 0, "n must be between 1 and 36"},
+		{"n too large", "A", 37, "n must be between 1 and 36"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := luhn.GenerateModN(tt.input, tt.n, false)
+			if err == nil {
+				t.Fatalf("expected error %q, got nil", tt.want)
+			}
+			if err.Error() != tt.want {
+				t.Errorf("got %q, want %q", err.Error(), tt.want)
+			}
+		})
+	}
+}
+
 // TestGenerateModN_InvalidN tests that n out of range [1,36] returns an error.
 func TestGenerateModN_InvalidN(t *testing.T) {
 	tests := []struct {
@@ -341,6 +372,51 @@ func TestGenerateModN_InvalidN(t *testing.T) {
 			}
 			if err.Error() != want {
 				t.Errorf("got %q, want %q", err.Error(), want)
+			}
+		})
+	}
+}
+
+// TestModNValidation_Order verifies that mod-N validation checks are applied in the correct order.
+// Spaces are checked before per-character validation.
+func TestModNValidation_Order(t *testing.T) {
+	tests := []struct {
+		name  string
+		input string
+		n     int
+		want  string
+	}{
+		{"space before invalid char", " !", 36, "string cannot contain spaces"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name+"/GenerateModN", func(t *testing.T) {
+			_, err := luhn.GenerateModN(tt.input, tt.n, false)
+			if err == nil {
+				t.Fatalf("expected error %q, got nil", tt.want)
+			}
+			if err.Error() != tt.want {
+				t.Errorf("got %q, want %q", err.Error(), tt.want)
+			}
+		})
+
+		t.Run(tt.name+"/ValidateModN", func(t *testing.T) {
+			_, err := luhn.ValidateModN(tt.input, tt.n)
+			if err == nil {
+				t.Fatalf("expected error %q, got nil", tt.want)
+			}
+			if err.Error() != tt.want {
+				t.Errorf("got %q, want %q", err.Error(), tt.want)
+			}
+		})
+
+		t.Run(tt.name+"/ChecksumModN", func(t *testing.T) {
+			_, err := luhn.ChecksumModN(tt.input, tt.n)
+			if err == nil {
+				t.Fatalf("expected error %q, got nil", tt.want)
+			}
+			if err.Error() != tt.want {
+				t.Errorf("got %q, want %q", err.Error(), tt.want)
 			}
 		})
 	}
@@ -390,6 +466,50 @@ func TestValidateModN_RoundTrip(t *testing.T) {
 	}
 }
 
+// TestValidateModN_CaseInsensitive tests that ValidateModN accepts lowercase check characters.
+func TestValidateModN_CaseInsensitive(t *testing.T) {
+	tests := []struct {
+		name  string
+		input string
+		n     int
+	}{
+		{"lowercase check char", "hello", 36},
+		{"uppercase check char", "HELLO", 36},
+		{"mixed case payload", "HeLLo", 36},
+		{"hex lowercase", "ff", 16},
+		{"hex uppercase", "FF", 16},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Generate the correct value (always uppercase check char)
+			generated, err := luhn.GenerateModN(tt.input, tt.n, false)
+			if err != nil {
+				t.Fatalf("GenerateModN error: %v", err)
+			}
+
+			// Uppercase version should validate
+			valid, err := luhn.ValidateModN(generated, tt.n)
+			if err != nil {
+				t.Fatalf("ValidateModN(%q) error: %v", generated, err)
+			}
+			if !valid {
+				t.Errorf("ValidateModN(%q, %d) = false, want true", generated, tt.n)
+			}
+
+			// Lowercase version should also validate
+			lowered := strings.ToLower(generated)
+			valid, err = luhn.ValidateModN(lowered, tt.n)
+			if err != nil {
+				t.Fatalf("ValidateModN(%q) error: %v", lowered, err)
+			}
+			if !valid {
+				t.Errorf("ValidateModN(%q, %d) = false, want true [lowercased]", lowered, tt.n)
+			}
+		})
+	}
+}
+
 // TestValidateModN_Invalid tests that wrong check characters are rejected.
 func TestValidateModN_Invalid(t *testing.T) {
 	tests := []struct {
@@ -419,7 +539,7 @@ func TestValidateModN_Invalid(t *testing.T) {
 	}
 }
 
-// TestValidateModN_Errors tests ValidateModN error cases.
+// TestValidateModN_Errors tests ValidateModN error cases including shared validation.
 func TestValidateModN_Errors(t *testing.T) {
 	tests := []struct {
 		name  string
@@ -429,6 +549,9 @@ func TestValidateModN_Errors(t *testing.T) {
 	}{
 		{"empty string", "", 10, "string cannot be empty"},
 		{"length 1", "A", 36, "string must be longer than 1 character"},
+		{"spaces", " AB ", 36, "string cannot contain spaces"},
+		{"invalid char in check position", "1a", 10, "invalid character: 'a'"},
+		{"invalid char in payload", "a1", 10, "invalid character: 'a'"},
 		{"n too small", "AB", 0, "n must be between 1 and 36"},
 		{"n too large", "AB", 37, "n must be between 1 and 36"},
 	}
@@ -503,6 +626,7 @@ func TestChecksumModN_Errors(t *testing.T) {
 		want  string
 	}{
 		{"empty string", "", 10, "string cannot be empty"},
+		{"spaces", " A ", 36, "string cannot contain spaces"},
 		{"n too small", "A", 0, "n must be between 1 and 36"},
 		{"n too large", "A", 37, "n must be between 1 and 36"},
 		{"invalid char", "A!", 36, "invalid character: '!'"},

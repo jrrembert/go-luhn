@@ -151,6 +151,24 @@ func Random(length string) (string, error) {
 	return result, nil
 }
 
+// validateModNInput validates input for mod-N functions.
+// Checks empty and spaces (shared with validateInput), then validates each
+// character against the CODE_POINTS alphabet for the given n.
+func validateModNInput(value string, n int) error {
+	if value == "" {
+		return errEmpty
+	}
+	if strings.Contains(value, " ") {
+		return errSpaces
+	}
+	for i := 0; i < len(value); i++ {
+		if charIndex(value[i], n) < 0 {
+			return fmt.Errorf("invalid character: %q", value[i])
+		}
+	}
+	return nil
+}
+
 // charIndex returns the index of c in the CODE_POINTS alphabet, or -1 if not found.
 func charIndex(c byte, n int) int {
 	var idx int
@@ -200,11 +218,11 @@ func generateChecksumModN(value string, n int) (int, error) {
 // GenerateModN computes a Luhn mod-N check character for the given alphanumeric value.
 // n must be between 1 and 36. If checksumOnly is true, only the check character is returned.
 func GenerateModN(value string, n int, checksumOnly bool) (string, error) {
-	if value == "" {
-		return "", errEmpty
-	}
 	if n < 1 || n > 36 {
 		return "", errInvalidN
+	}
+	if err := validateModNInput(value, n); err != nil {
+		return "", err
 	}
 	if len(value) >= 10000 {
 		return "", errModNMaxLength
@@ -225,37 +243,41 @@ func GenerateModN(value string, n int, checksumOnly bool) (string, error) {
 // ValidateModN determines whether value has a valid Luhn mod-N check character.
 // n must be between 1 and 36.
 func ValidateModN(value string, n int) (bool, error) {
-	if value == "" {
-		return false, errEmpty
+	if n < 1 || n > 36 {
+		return false, errInvalidN
+	}
+	if err := validateModNInput(value, n); err != nil {
+		return false, err
 	}
 	if len(value) == 1 {
 		return false, errMinLength
-	}
-	if n < 1 || n > 36 {
-		return false, errInvalidN
 	}
 	if len(value) >= 10000 {
 		return false, errModNMaxLength
 	}
 
-	payload := value[:len(value)-1]
+	// Normalize to uppercase so that lowercase input matches the uppercase
+	// CODE_POINTS alphabet used by GenerateModN.
+	upper := strings.ToUpper(value)
+
+	payload := upper[:len(upper)-1]
 	generated, err := GenerateModN(payload, n, false)
 	if err != nil {
 		return false, err
 	}
 	// Use constant-time comparison to prevent timing side-channel attacks
 	// that could reveal information about valid check digits.
-	return subtle.ConstantTimeCompare([]byte(generated), []byte(value)) == 1, nil
+	return subtle.ConstantTimeCompare([]byte(generated), []byte(upper)) == 1, nil
 }
 
 // ChecksumModN returns the integer index of the Luhn mod-N check character for value.
 // n must be between 1 and 36.
 func ChecksumModN(value string, n int) (int, error) {
-	if value == "" {
-		return 0, errEmpty
-	}
 	if n < 1 || n > 36 {
 		return 0, errInvalidN
+	}
+	if err := validateModNInput(value, n); err != nil {
+		return 0, err
 	}
 	if len(value) >= 10000 {
 		return 0, errModNMaxLength
