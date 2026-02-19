@@ -36,7 +36,15 @@ jobs:
           VERSION=$(git tag --points-at HEAD | head -1)
           if [ -n "$VERSION" ]; then
             echo "Registering $VERSION with Go module proxy..."
-            GOPROXY=https://proxy.golang.org go list -m "github.com/jrrembert/go-luhn@$VERSION"
+            for attempt in 1 2 3 4 5; do
+              if GOPROXY=https://proxy.golang.org go list -m "github.com/jrrembert/go-luhn@$VERSION" 2>/dev/null; then
+                echo "Successfully registered $VERSION"
+                exit 0
+              fi
+              echo "Attempt $attempt failed, waiting 30 seconds..."
+              sleep 30
+            done
+            echo "::warning::Failed to register $VERSION with Go module proxy after 5 attempts"
           else
             echo "No new tag created, skipping proxy registration."
           fi
