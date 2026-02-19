@@ -1,0 +1,85 @@
+name: Sync rc with main
+
+on:
+  push:
+    tags: ['v[0-9]+.[0-9]+.[0-9]+']
+    branches: [rc]
+
+permissions:
+  contents: write
+  pull-requests: write
+  statuses: write
+
+jobs:
+  # After any push to rc, mark sync status as success (unblocks PRs)
+  clear-sync-status:
+    if: github.repository == 'jrrembert/go-luhn' && github.ref == 'refs/heads/rc'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          ref: rc
+      - name: Set sync status to success
+        run: |
+          SHA=$(git rev-parse HEAD)
+          gh api repos/${{ github.repository }}/statuses/$SHA \
+            -f state=success \
+            -f context=sync/rc-up-to-date \
+            -f description="rc is up to date with main"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # After a stable release tag, sync rc with main
+  sync:
+    if: github.repository == 'jrrembert/go-luhn' && startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          ref: rc
+          fetch-depth: 0
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Block PRs to rc during sync
+        run: |
+          SHA=$(git rev-parse HEAD)
+          gh api repos/${{ github.repository }}/statuses/$SHA \
+            -f state=pending \
+            -f context=sync/rc-up-to-date \
+            -f description="Syncing rc with main after release"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Attempt merge
+        id: merge
+        run: |
+          git fetch origin main
+          if git merge origin/main --no-edit; then
+            echo "conflict=false" >> "$GITHUB_OUTPUT"
+          else
+            git merge --abort
+            echo "conflict=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Push clean merge
+        if: steps.merge.outputs.conflict == 'false'
+        run: git push origin HEAD:rc
+
+      - name: Create sync PR for manual conflict resolution
+        if: steps.merge.outputs.conflict == 'true'
+        uses: peter-evans/create-pull-request@22a9089034f40e5a961c8808d113e2c98fb63676 # v7
+        with:
+          branch: chore/sync-rc-after-release
+          base: rc
+          title: "chore: sync rc with main after release"
+          body: |
+            Automated post-release sync. This PR merges `main` into `rc`.
+
+            **This PR has merge conflicts that need manual resolution.**
+
+            All other PRs targeting `rc` are blocked until this sync completes.
+          delete-branch: true

@@ -109,6 +109,27 @@ To test what semantic-release would do without creating a release:
 npx semantic-release --dry-run
 ```
 
+## Post-release sync
+
+After each stable release, `rc` must be synced with `main` to pick up any `chore:`/`docs:` commits that targeted `main` directly. This is automated by `.github/workflows/sync-rc.yml`.
+
+### How it works
+
+1. A stable release tag (e.g., `v1.1.0`) triggers the `sync` job
+2. The workflow sets a `sync/rc-up-to-date` commit status to **pending** on `rc`'s HEAD, blocking all PRs to `rc` via branch protection
+3. It attempts to merge `main` into `rc`
+4. **If clean merge**: pushes directly to `rc`. The push triggers the `clear-sync-status` job, which sets the status to **success**, unblocking PRs
+5. **If conflicts**: creates a sync PR (`chore/sync-rc-after-release` → `rc`) for manual resolution. PRs to `rc` remain blocked until the sync PR is merged
+
+### Manual conflict resolution
+
+If the sync PR has conflicts:
+
+1. Check out the `chore/sync-rc-after-release` branch locally
+2. Resolve conflicts, commit, and push
+3. Merge the sync PR — this pushes to `rc`, triggering the `clear-sync-status` job
+4. Verify the `sync/rc-up-to-date` status is **success** on `rc`'s HEAD
+
 ## Troubleshooting
 
 ### No release was created
