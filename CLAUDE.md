@@ -24,6 +24,7 @@ Releases are fully automated via [semantic-release](https://github.com/semantic-
 - **Release candidates**: Push `feat:`/`fix:` commits to the `rc` branch → publishes pre-release versions (e.g., `1.0.0-rc.1`)
 - **Stable releases**: Merge `rc` into `main` → publishes stable versions (e.g., `1.0.0`)
 - Every stable release must be preceded by at least one release candidate
+- After each release, the workflow automatically registers the new version with the [Go module proxy](https://proxy.golang.org) so it's immediately discoverable on [pkg.go.dev](https://pkg.go.dev/github.com/jrrembert/go-luhn) and available via `go get`
 
 ## Architecture
 
@@ -45,6 +46,9 @@ Releases are fully automated via [semantic-release](https://github.com/semantic-
 - Branch naming: use prefixes `feature/`, `fix/`, `chore/` (e.g., `feature/add-auth`, `fix/login-bug`)
 - Commits, PR titles, and issue titles follow conventional commit format: `feat:`, `fix:`, `chore:`, `docs:`, `refactor:`, `test:`, `perf:`, `ci:`
 - Always merge PRs via GitHub UI or `gh pr merge` — never merge locally with `git merge` then push. Local merges break GitHub's `Closes #N` auto-close linking.
+- **Merge strategy**:
+  - `--rebase` for all regular PRs: `feat:`, `fix:`, `chore:`, `docs:`, `refactor:`, `test:`, `perf:`, `ci:`
+  - `--merge` (merge commit) for release PRs (`rc` → `main`) — keeps the branches in sync and avoids SHA divergence
 - PRs use the template at `.github/PULL_REQUEST_TEMPLATE.md` — fill in all sections (Summary, Changes, Test plan)
 - Use `/pr` or `/pr <issue-number>` to create pull requests with the standard format
 - Always create the feature branch from the appropriate base branch (`rc` for features/fixes, `main` for chore/docs) **before** writing code, not at commit time

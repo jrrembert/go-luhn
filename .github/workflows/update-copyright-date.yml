@@ -1,37 +1,30 @@
-name: update copyright date in README
+name: Update copyright date
 
 on:
-  # https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#schedule
   schedule:
-    # The shortest interval you can run scheduled workflows is once every 5 minutes.
-    # Note: The schedule event can be delayed during periods of high loads of GitHub Actions workflow runs.
-    # High load times include the start of every hour.
-    # To decrease the chance of delay, schedule your workflow to run at a different time of the hour.
-    # Every 5 minutes.
-    # - cron: '*/5 * * * *'
-    # At the beginning of every day.
-    # - cron: "0 0 * * *"
-    # At the beginning of every year.
-    - cron: "0 0 1 1 *"
+    - cron: "0 0 1 1 *" # January 1st at midnight UTC
+  workflow_dispatch:
 
-# on: [push]
+permissions:
+  contents: write
+  pull-requests: write
 
 jobs:
-  report:
+  update-copyright:
+    if: github.repository == 'jrrembert/go-luhn'
     runs-on: ubuntu-latest
     steps:
-      - name: Check out repository code
-        # https://github.com/actions/checkout/tree/v3.0.2
-        uses: actions/checkout@v6
-      - name: Modify date and time
-        run: |
-          ./update-copyright-date.sh README.md
-          cat README.md
-      - name: Push to repository
-        run: |
-          git config --global user.name "Ryan Rembert"
-          git config --global user.email "jrrembert@users.noreply.github.com"
-          now=$(date)  
-          git add -A
-          git commit -m "update copryright year"
-          git push
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - name: Update copyright years
+        run: bash update-copyright-date.sh
+      - name: Create pull request
+        uses: peter-evans/create-pull-request@22a9089034f40e5a961c8808d113e2c98fb63676 # v7.0.11
+        with:
+          commit-message: "chore: update copyright year"
+          title: "chore: update copyright year"
+          body: |
+            Automated annual copyright year update.
+
+            Updates copyright year ranges in LICENSE and README.md.
+          branch: chore/update-copyright-date
+          delete-branch: true

@@ -15,17 +15,17 @@ jobs:
       matrix:
         go-version: ["1.21", "1.22"]
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
         with:
           go-version: ${{ matrix.go-version }}
       - run: go vet ./...
-      - uses: golangci/golangci-lint-action@v6
+      - uses: golangci/golangci-lint-action@55c2c1448f86e01eaae002a5a3a9624417608d84 # v6
         with:
-          version: latest
+          version: v1.64.8
       - run: go build ./...
       - run: go test -count=1 -race -coverprofile=coverage.out ./...
-      - uses: codecov/codecov-action@v4
+      - uses: codecov/codecov-action@b9fd7d16f6d7d1b5d2bec1a2887e65ceed900238 # v4
         if: matrix.go-version == '1.22'
         with:
           files: coverage.out
