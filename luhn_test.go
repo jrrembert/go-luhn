@@ -617,6 +617,44 @@ func TestChecksumModN_Alphanumeric(t *testing.T) {
 	}
 }
 
+// TestModNMaxLength tests that strings of length >= 10000 return an error for all three ModN functions.
+func TestModNMaxLength(t *testing.T) {
+	long := strings.Repeat("1", 10000)
+
+	t.Run("GenerateModN", func(t *testing.T) {
+		_, err := luhn.GenerateModN(long, 10, false)
+		if err == nil {
+			t.Fatal("expected error, got nil")
+		}
+		want := "string must be less than 10000 characters"
+		if err.Error() != want {
+			t.Errorf("got %q, want %q", err.Error(), want)
+		}
+	})
+
+	t.Run("ValidateModN", func(t *testing.T) {
+		_, err := luhn.ValidateModN(long, 10)
+		if err == nil {
+			t.Fatal("expected error, got nil")
+		}
+		want := "string must be less than 10000 characters"
+		if err.Error() != want {
+			t.Errorf("got %q, want %q", err.Error(), want)
+		}
+	})
+
+	t.Run("ChecksumModN", func(t *testing.T) {
+		_, err := luhn.ChecksumModN(long, 10)
+		if err == nil {
+			t.Fatal("expected error, got nil")
+		}
+		want := "string must be less than 10000 characters"
+		if err.Error() != want {
+			t.Errorf("got %q, want %q", err.Error(), want)
+		}
+	})
+}
+
 // TestChecksumModN_Errors tests ChecksumModN error cases.
 func TestChecksumModN_Errors(t *testing.T) {
 	tests := []struct {
