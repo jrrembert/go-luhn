@@ -2,7 +2,10 @@ name: Update copyright date
 
 on:
   schedule:
-    - cron: "0 0 1 1 *" # January 1st at midnight UTC
+    # January 1st at 12:01 UTC
+    - cron: "1 0 1 1 *"
+    # Run again on January 2nd if first fails and I'm lazy.
+    - cron: "0 0 2 1 *"
   workflow_dispatch:
 
 permissions:
